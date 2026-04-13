@@ -12,7 +12,7 @@ import Foundation
 #endif
 
 private extension RustBuffer {
-    // Allocate a new buffer, copying the contents of a `UInt8` array.
+    /// Allocate a new buffer, copying the contents of a `UInt8` array.
     init(bytes: [UInt8]) {
         let rbuf = bytes.withUnsafeBufferPointer { ptr in
             RustBuffer.from(ptr)
@@ -24,8 +24,8 @@ private extension RustBuffer {
         try! rustCall { ffi_uniffi_wysiwyg_composer_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
-    // Frees the buffer in place.
-    // The buffer must not be used after this is called.
+    /// Frees the buffer in place.
+    /// The buffer must not be used after this is called.
     func deallocate() {
         try! rustCall { ffi_uniffi_wysiwyg_composer_rustbuffer_free(self, $0) }
     }
@@ -70,9 +70,9 @@ private func createReader(data: Data) -> (data: Data, offset: Data.Index) {
     (data: data, offset: 0)
 }
 
-// Reads an integer at the current offset, in big-endian order, and advances
-// the offset on success. Throws if reading the integer would move the
-// offset past the end of the buffer.
+/// Reads an integer at the current offset, in big-endian order, and advances
+/// the offset on success. Throws if reading the integer would move the
+/// offset past the end of the buffer.
 private func readInt<T: FixedWidthInteger>(_ reader: inout (data: Data, offset: Data.Index)) throws -> T {
     let range = reader.offset ..< reader.offset + MemoryLayout<T>.size
     guard reader.data.count >= range.upperBound else {
@@ -89,8 +89,8 @@ private func readInt<T: FixedWidthInteger>(_ reader: inout (data: Data, offset: 
     return value.bigEndian
 }
 
-// Reads an arbitrary number of bytes, to be used to read
-// raw bytes, this is useful when lifting strings
+/// Reads an arbitrary number of bytes, to be used to read
+/// raw bytes, this is useful when lifting strings
 private func readBytes(_ reader: inout (data: Data, offset: Data.Index), count: Int) throws -> [UInt8] {
     let range = reader.offset ..< (reader.offset + count)
     guard reader.data.count >= range.upperBound else {
@@ -104,17 +104,17 @@ private func readBytes(_ reader: inout (data: Data, offset: Data.Index), count: 
     return value
 }
 
-// Reads a float at the current offset.
+/// Reads a float at the current offset.
 private func readFloat(_ reader: inout (data: Data, offset: Data.Index)) throws -> Float {
     return try Float(bitPattern: readInt(&reader))
 }
 
-// Reads a float at the current offset.
+/// Reads a float at the current offset.
 private func readDouble(_ reader: inout (data: Data, offset: Data.Index)) throws -> Double {
     return try Double(bitPattern: readInt(&reader))
 }
 
-// Indicates if the offset has reached the end of the buffer.
+/// Indicates if the offset has reached the end of the buffer.
 private func hasRemaining(_ reader: (data: Data, offset: Data.Index)) -> Bool {
     return reader.offset < reader.data.count
 }
@@ -127,14 +127,14 @@ private func createWriter() -> [UInt8] {
     return []
 }
 
-private func writeBytes<S>(_ writer: inout [UInt8], _ byteArr: S) where S: Sequence, S.Element == UInt8 {
+private func writeBytes<S: Sequence>(_ writer: inout [UInt8], _ byteArr: S) where S.Element == UInt8 {
     writer.append(contentsOf: byteArr)
 }
 
-// Writes an integer in big-endian order.
-//
-// Warning: make sure what you are trying to write
-// is in the correct type!
+/// Writes an integer in big-endian order.
+///
+/// Warning: make sure what you are trying to write
+/// is in the correct type!
 private func writeInt<T: FixedWidthInteger>(_ writer: inout [UInt8], _ value: T) {
     var value = value.bigEndian
     withUnsafeBytes(of: &value) { writer.append(contentsOf: $0) }
@@ -148,8 +148,8 @@ private func writeDouble(_ writer: inout [UInt8], _ value: Double) {
     writeInt(&writer, value.bitPattern)
 }
 
-// Protocol for types that transfer other types across the FFI. This is
-// analogous go the Rust trait of the same name.
+/// Protocol for types that transfer other types across the FFI. This is
+/// analogous go the Rust trait of the same name.
 private protocol FfiConverter {
     associatedtype FfiType
     associatedtype SwiftType
@@ -160,7 +160,7 @@ private protocol FfiConverter {
     static func write(_ value: SwiftType, into buf: inout [UInt8])
 }
 
-// Types conforming to `Primitive` pass themselves directly over the FFI.
+/// Types conforming to `Primitive` pass themselves directly over the FFI.
 private protocol FfiConverterPrimitive: FfiConverter where FfiType == SwiftType {}
 
 extension FfiConverterPrimitive {
@@ -173,8 +173,8 @@ extension FfiConverterPrimitive {
     }
 }
 
-// Types conforming to `FfiConverterRustBuffer` lift and lower into a `RustBuffer`.
-// Used for complex types where it's hard to write a custom lift/lower.
+/// Types conforming to `FfiConverterRustBuffer` lift and lower into a `RustBuffer`.
+/// Used for complex types where it's hard to write a custom lift/lower.
 private protocol FfiConverterRustBuffer: FfiConverter where FfiType == RustBuffer {}
 
 extension FfiConverterRustBuffer {
@@ -195,8 +195,8 @@ extension FfiConverterRustBuffer {
     }
 }
 
-// An error type for FFI errors. These errors occur at the UniFFI level, not
-// the library level.
+/// An error type for FFI errors. These errors occur at the UniFFI level, not
+/// the library level.
 private enum UniffiInternalError: LocalizedError {
     case bufferOverflow
     case incompleteData
@@ -1293,8 +1293,8 @@ public struct Attribute {
     public var key: String
     public var value: String
 
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
     public init(key: String, value: String) {
         self.key = key
         self.value = value
@@ -1346,8 +1346,8 @@ public struct ComposerState {
     public var start: UInt32
     public var end: UInt32
 
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
     public init(html: [UInt16], start: UInt32, end: UInt32) {
         self.html = html
         self.start = start
@@ -1407,8 +1407,8 @@ public struct MentionsState {
     public var roomAliases: [String]
     public var hasAtRoomMention: Bool
 
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
     public init(userIds: [String], roomIds: [String], roomAliases: [String], hasAtRoomMention: Bool) {
         self.userIds = userIds
         self.roomIds = roomIds
@@ -1475,8 +1475,8 @@ public struct SuggestionPattern {
     public var start: UInt32
     public var end: UInt32
 
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
     public init(key: PatternKey, text: String, start: UInt32, end: UInt32) {
         self.key = key
         self.text = text
@@ -1741,8 +1741,7 @@ extension DomCreationError: Error {}
 public enum LinkAction {
     case createWithText
     case create
-    case edit(url: String
-    )
+    case edit(url: String)
     case disabled
 }
 
@@ -1756,8 +1755,7 @@ public struct FfiConverterTypeLinkAction: FfiConverterRustBuffer {
 
         case 2: return .create
 
-        case 3: return try .edit(url: FfiConverterString.read(from: &buf)
-            )
+        case 3: return try .edit(url: FfiConverterString.read(from: &buf))
 
         case 4: return .disabled
 
@@ -1798,8 +1796,7 @@ extension LinkAction: Equatable, Hashable {}
 
 public enum LinkActionUpdate {
     case keep
-    case update(linkAction: LinkAction
-    )
+    case update(linkAction: LinkAction)
 }
 
 public struct FfiConverterTypeLinkActionUpdate: FfiConverterRustBuffer {
@@ -1810,8 +1807,7 @@ public struct FfiConverterTypeLinkActionUpdate: FfiConverterRustBuffer {
         switch variant {
         case 1: return .keep
 
-        case 2: return try .update(linkAction: FfiConverterTypeLinkAction.read(from: &buf)
-            )
+        case 2: return try .update(linkAction: FfiConverterTypeLinkAction.read(from: &buf))
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1845,8 +1841,7 @@ extension LinkActionUpdate: Equatable, Hashable {}
 public enum MenuAction {
     case keep
     case none
-    case suggestion(suggestionPattern: SuggestionPattern
-    )
+    case suggestion(suggestionPattern: SuggestionPattern)
 }
 
 public struct FfiConverterTypeMenuAction: FfiConverterRustBuffer {
@@ -1859,8 +1854,7 @@ public struct FfiConverterTypeMenuAction: FfiConverterRustBuffer {
 
         case 2: return .none
 
-        case 3: return try .suggestion(suggestionPattern: FfiConverterTypeSuggestionPattern.read(from: &buf)
-            )
+        case 3: return try .suggestion(suggestionPattern: FfiConverterTypeSuggestionPattern.read(from: &buf))
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1896,8 +1890,7 @@ extension MenuAction: Equatable, Hashable {}
 
 public enum MenuState {
     case keep
-    case update(actionStates: [ComposerAction: ActionState]
-    )
+    case update(actionStates: [ComposerAction: ActionState])
 }
 
 public struct FfiConverterTypeMenuState: FfiConverterRustBuffer {
@@ -1908,8 +1901,7 @@ public struct FfiConverterTypeMenuState: FfiConverterRustBuffer {
         switch variant {
         case 1: return .keep
 
-        case 2: return try .update(actionStates: FfiConverterDictionaryTypeComposerActionTypeActionState.read(from: &buf)
-            )
+        case 2: return try .update(actionStates: FfiConverterDictionaryTypeComposerActionTypeActionState.read(from: &buf))
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1944,8 +1936,7 @@ public enum PatternKey {
     case at
     case hash
     case slash
-    case custom(String
-    )
+    case custom(String)
     case colon
 }
 
@@ -1961,8 +1952,7 @@ public struct FfiConverterTypePatternKey: FfiConverterRustBuffer {
 
         case 3: return .slash
 
-        case 4: return try .custom(FfiConverterString.read(from: &buf)
-            )
+        case 4: return try .custom(FfiConverterString.read(from: &buf))
 
         case 5: return .colon
 
@@ -2166,8 +2156,8 @@ private enum InitializationResult {
     case apiChecksumMismatch
 }
 
-// Use a global variables to perform the versioning checks. Swift ensures that
-// the code inside is only computed once.
+/// Use a global variables to perform the versioning checks. Swift ensures that
+/// the code inside is only computed once.
 private var initializationResult: InitializationResult {
     // Get the bindings contract version from our ComponentInterface
     let bindings_contract_version = 26
